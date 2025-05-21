@@ -36,6 +36,11 @@ pub enum Token {
     Watch,
     #[token("on_error")]
     OnError,
+    #[token("true")]
+    True,
+    #[token("false")]
+    False,
+
 
     // Symbols and operators
     #[token("==")]
@@ -64,6 +69,9 @@ pub enum Token {
     // Literals
     #[regex(r#""([^"\\]|\\.)*""#, |lex| lex.slice().trim_matches('"').to_string())]
     StringLiteral(String),
+
+    #[regex(r"[0-9]+\.[0-9]+", |lex| lex.slice().parse().unwrap_or(0.0))]
+    Float(f64),
 
     #[regex(r"[0-9]+", |lex| lex.slice().parse().unwrap_or(0))]
     Number(i64),

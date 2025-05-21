@@ -31,6 +31,8 @@ pub enum Expr {
     Lte(String, Value),
     And(Box<Expr>, Box<Expr>),
     Or(Box<Expr>, Box<Expr>),
+
+    // pendent
     MapExpr(Box<Expr>, String), 
 }
 
@@ -38,8 +40,12 @@ pub enum Expr {
 pub enum Value {
     String(String),
     Number(i64),
+    Float(f64),
+    Bool(bool),
 }
 
+
+// pendent
 impl SortDirection {
     pub fn from_str(s: &str) -> Self {
         match s.to_ascii_lowercase().as_str() {

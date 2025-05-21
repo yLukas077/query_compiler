@@ -11,7 +11,7 @@ Experimental tool to compile and execute modern, readable queries over CSV files
 ```txt
 source "data/clients.csv"
 show name, age
-filter age > 25 and city == "Recife"
+filter (age > 25 and city == "Recife") or (name == "Ana" and age < 25)
 sort by age desc
 cap 10
 unique
@@ -45,6 +45,13 @@ The file will be saved automatically to the given path.
 - Polars 0.39+ (installed via Cargo, backend for fast execution)
 - [logos](https://crates.io/crates/logos) (lexer)
 
+## Supported types
+
+- String, Integer, Float, Boolean
+
+- Example:
+  `filter price > 10.5 and active == true and name == "Ana"`
+
 ## Supported features
 
 - `source`: path to a CSV file
@@ -58,11 +65,11 @@ The file will be saved automatically to the given path.
 ## Example CSV
 
 ```csv
-name,age,city
-João,32,Recife
-Maria,19,Olinda
-José,40,Recife
-Ana,22,Natal
+name,age,city,price,active
+João,32,Recife,10.5,true
+Maria,19,Olinda,15.0,false
+José,40,Recife,8.0,true
+Ana,22,Natal,23.2,true
 ```
 
 ## Architecture

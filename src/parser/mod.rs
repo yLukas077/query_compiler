@@ -28,6 +28,7 @@ impl Parser {
         let mut map = None;
         let mut unique = false;
 
+        // The order of keywords is flexible: filter, show, sort, cap, map, unique...
         while let Some(token) = self.peek() {
             match token {
                 Token::Filter => {
@@ -123,33 +124,40 @@ impl Parser {
             _ => return Err(QueryError::Expected("Expected field name after 'map'".into())),
         };
         self.expect_token(&Token::Assign)?;
-        let expr = self.parse_simple_expr()?;
+        let expr = self.parse_comparison_expr()?;
         Ok((field, expr))
     }
 
-    fn parse_expr(&mut self) -> Result<Expr, QueryError> {
-        // Handles chained logical expressions: age > 20 and city == "Recife"
-        let mut left = self.parse_simple_expr()?;
+    // ----------- NOVO PARSER DE EXPRESSÃO COM PARÊNTESES -----------
+    pub fn parse_expr(&mut self) -> Result<Expr, QueryError> {
+        self.parse_or_expr()
+    }
 
-        while let Some(token) = self.peek() {
-            match token {
-                Token::Ident(op) if op.eq_ignore_ascii_case("and") => {
-                    self.next();
-                    let right = self.parse_simple_expr()?;
-                    left = Expr::And(Box::new(left), Box::new(right));
-                }
-                Token::Ident(op) if op.eq_ignore_ascii_case("or") => {
-                    self.next();
-                    let right = self.parse_simple_expr()?;
-                    left = Expr::Or(Box::new(left), Box::new(right));
-                }
-                _ => break,
-            }
+    fn parse_or_expr(&mut self) -> Result<Expr, QueryError> {
+        let mut left = self.parse_and_expr()?;
+        while self.match_ident("or") {
+            let right = self.parse_and_expr()?;
+            left = Expr::Or(Box::new(left), Box::new(right));
         }
         Ok(left)
     }
 
-    fn parse_simple_expr(&mut self) -> Result<Expr, QueryError> {
+    fn parse_and_expr(&mut self) -> Result<Expr, QueryError> {
+        let mut left = self.parse_comparison_expr()?;
+        while self.match_ident("and") {
+            let right = self.parse_comparison_expr()?;
+            left = Expr::And(Box::new(left), Box::new(right));
+        }
+        Ok(left)
+    }
+
+    fn parse_comparison_expr(&mut self) -> Result<Expr, QueryError> {
+        if self.match_token(&Token::LParen) {
+            let expr = self.parse_expr()?;
+            self.expect_token(&Token::RParen)?;
+            return Ok(expr);
+        }
+
         let field = match self.next() {
             Some(Token::Ident(name)) => name,
             _ => return Err(QueryError::Expected("Expected field name in expression".into())),
@@ -166,8 +174,11 @@ impl Parser {
         };
 
         let value = match self.next() {
+            Some(Token::Float(f)) => Value::Float(f),
             Some(Token::Number(n)) => Value::Number(n),
             Some(Token::StringLiteral(s)) => Value::String(s),
+            Some(Token::True) => Value::Bool(true),
+            Some(Token::False) => Value::Bool(false),
             Some(tok) => return Err(QueryError::Unexpected(format!("Unexpected value: {:?}", tok))),
             None => return Err(QueryError::Expected("Expected literal value".into())),
         };
@@ -183,6 +194,31 @@ impl Parser {
         })
     }
 
+    // ------------ HELPERS ------------
+
+    /// Checks for an identifier (e.g., 'and', 'or') and consumes it if found.
+    fn match_ident(&mut self, expected: &str) -> bool {
+        if let Some(Token::Ident(name)) = self.peek() {
+            if name.eq_ignore_ascii_case(expected) {
+                self.next();
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Checks for a token and consumes it if found.
+    fn match_token(&mut self, expected: &Token) -> bool {
+        if let Some(tok) = self.peek() {
+            if tok == expected {
+                self.next();
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Expects a specific token, returns error if not found.
     fn expect_token(&mut self, expected: &Token) -> Result<(), QueryError> {
         match self.next() {
             Some(t) if t == *expected => Ok(()),
@@ -193,10 +229,12 @@ impl Parser {
         }
     }
 
+    /// Peeks at the current token without consuming it.
     fn peek(&self) -> Option<&Token> {
         self.tokens.get(self.position)
     }
 
+    /// Consumes and returns the current token.
     fn next(&mut self) -> Option<Token> {
         if self.position >= self.tokens.len() {
             None

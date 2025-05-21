@@ -77,7 +77,9 @@ fn eval_expr(df: &DataFrame, expr: Expr) -> Result<Series> {
 fn value_series(_df: &DataFrame, col: &str, val: Value) -> Result<Series> {
     Ok(match val {
         Value::Number(n) => Series::new(col, vec![n]),
+        Value::Float(f) => Series::new(col, vec![f]),
         Value::String(s) => Series::new(col, vec![s]),
+        Value::Bool(b) => Series::new(col, vec![b]),
     })
 }
 
