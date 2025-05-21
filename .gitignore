@@ -1,0 +1,33 @@
+# Rust build files
+/target
+**/*.rs.bk
+
+# IDEs & editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Dependency files
+Cargo.lock
+
+# Output files
+*.csv
+*.query
+
+# Query result directory
+/reports/
+
+# Test data
+/tests/test_data.csv
+
+# Logs and misc
+*.log
+*.tmp
+.DS_Store
+
+# Binaries
+*.exe
+*.out
+*.rlib
+*.dSYM
