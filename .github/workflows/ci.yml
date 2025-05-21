@@ -44,7 +44,7 @@ jobs:
       - name: Run tests
         run: cargo test --all -- --nocapture --test-threads=1
 
-      - name: Show memory/CPU usage after tests
+      - name: Show memory and CPU usage after tests
         if: always()
         run: |
           echo "Memory Info after tests:"
