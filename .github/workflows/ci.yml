@@ -20,6 +20,13 @@ jobs:
           toolchain: stable
           override: true
 
+      - name: Show runner resources
+        run: |
+          echo "CPU Info:"
+          lscpu
+          echo "Memory Info:"
+          free -m
+
       - name: Cache Cargo dependencies
         uses: actions/cache@v3
         with:
@@ -31,15 +38,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Check
-        run: cargo check
+      - name: Build 
+        run: cargo build --all --locked --jobs 1
 
-      - name: Show memory and CPU usage before tests
-        run: |
-          echo "Memory (free -m):"
-          free -m
-          echo "CPU:"
-          lscpu
-
-      - name: Run tests (verbose, single thread, show output)
+      - name: Run tests
         run: cargo test --all -- --nocapture --test-threads=1
+
+      - name: Show memory/CPU usage after tests
+        if: always()
+        run: |
+          echo "Memory Info after tests:"
+          free -m
+          echo "Top 10 memory-consuming processes:"
+          ps aux --sort=-%mem | head -n 10
