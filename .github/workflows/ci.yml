@@ -1,4 +1,4 @@
-name: CI
+name: Rust CI
 
 on:
   push:
@@ -6,40 +6,43 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: full
+  RUSTFLAGS: -D warnings
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          components: rustfmt, clippy
+          components: clippy, rustfmt
 
-      - name: Cache Cargo dependencies
+      - name: Cache Dependencies
         uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
-      - name: Check
-        run: cargo check --all-targets
+      - name: Check Format
+        run: cargo fmt -- --check
 
-      - name: Run tests
-        timeout-minutes: 15
-        run: cargo test --all -- --nocapture --test-threads=1
-        env:
-          RUST_BACKTRACE: full
-
-      - name: Clippy check
+      - name: Clippy Check
         run: cargo clippy --all-targets -- -D warnings
 
-      - name: Rustfmt check
-        run: cargo fmt -- --check
+      - name: Run Tests
+        timeout-minutes: 15
+        run: cargo test -- --test-threads=1 --nocapture
+        env:
+          SQL_MAX_CONNECTIONS: 5  

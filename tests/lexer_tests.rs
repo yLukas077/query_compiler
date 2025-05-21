@@ -2,16 +2,16 @@ use query_compiler::lexer::{tokenize, Token};
 
 #[test]
 fn parses_keywords_and_identifiers() {
-    let input = r#"from "data.csv" select name, age where age > 18"#;
+    let input = r#"source "data.csv" show name, age filter age > 18"#;
     let tokens = tokenize(input);
 
-    assert_eq!(tokens[0], Token::From);
+    assert_eq!(tokens[0], Token::Source);
     assert_eq!(tokens[1], Token::StringLiteral("data.csv".into()));
-    assert_eq!(tokens[2], Token::Select);
+    assert_eq!(tokens[2], Token::Show);
     assert_eq!(tokens[3], Token::Ident("name".into()));
     assert_eq!(tokens[4], Token::Comma);
     assert_eq!(tokens[5], Token::Ident("age".into()));
-    assert_eq!(tokens[6], Token::Where);
+    assert_eq!(tokens[6], Token::Filter);
     assert_eq!(tokens[7], Token::Ident("age".into()));
     assert_eq!(tokens[8], Token::Gt);
     assert_eq!(tokens[9], Token::Number(18));
@@ -21,13 +21,13 @@ fn parses_keywords_and_identifiers() {
 fn skips_whitespace_and_comments() {
     let input = r#"
         # comment
-        from   "data.csv"    select name # another comment
+        source   "data.csv"    show name # another comment
     "#;
 
     let tokens = tokenize(input);
-    assert_eq!(tokens[0], Token::From);
+    assert_eq!(tokens[0], Token::Source);
     assert_eq!(tokens[1], Token::StringLiteral("data.csv".into()));
-    assert_eq!(tokens[2], Token::Select);
+    assert_eq!(tokens[2], Token::Show);
     assert_eq!(tokens[3], Token::Ident("name".into()));
 }
 
