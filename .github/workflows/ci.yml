@@ -9,23 +9,17 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          override: true
-
-      - name: Show runner resources
-        run: |
-          echo "CPU Info:"
-          lscpu
-          echo "Memory Info:"
-          free -m
+          components: rustfmt, clippy
 
       - name: Cache Cargo dependencies
         uses: actions/cache@v3
@@ -33,21 +27,19 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
 
-      - name: Build 
-        run: cargo build --all --locked --jobs 1
+      - name: Check
+        run: cargo check --all-targets
 
       - name: Run tests
+        timeout-minutes: 15
         run: cargo test --all -- --nocapture --test-threads=1
+        env:
+          RUST_BACKTRACE: full
 
-      - name: Show memory and CPU usage after tests
-        if: always()
-        run: |
-          echo "Memory Info after tests:"
-          free -m
-          echo "Top 10 memory-consuming processes:"
-          ps aux --sort=-%mem | head -n 10
+      - name: Clippy check
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Rustfmt check
+        run: cargo fmt -- --check
